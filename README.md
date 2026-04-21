@@ -1,3 +1,3 @@
 # dev-tools
 
-docker run -p 8080:80 -v ${PWD}:/usr/share/nginx/html nginx
+docker run -it --rm -v C:\git\dev-tools:/app -w /app -p 5173:5173 node:20 sh
