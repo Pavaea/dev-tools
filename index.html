@@ -301,18 +301,12 @@ function addBookFromInput() {
   let fname = document.getElementById('bookInput').value.trim();
   if (!fname) return;
   if (!fname.endsWith('.bin')) fname += '.bin';
-  // save to library list
-  const saved = JSON.parse(localStorage.getItem('rdr_library') || '[]');
-  if (!saved.includes(fname)) {
-    saved.push(fname);
-    localStorage.setItem('rdr_library', JSON.stringify(saved));
-  }
   document.getElementById('bookInput').value = '';
-  openBook(fname);
+  openBook(fname, true);
 }
 
 // ── OPEN BOOK ──
-async function openBook(fname) {
+async function openBook(fname, addToLibrary=false) {
   showReader();
   allChapters = [];
   activeChapIdx = -1;
@@ -322,6 +316,14 @@ async function openBook(fname) {
   try {
     const resp = await fetch('./lib/' + fname);
     if (!resp.ok) throw new Error('Could not fetch ' + fname);
+    // only add to library once we know the file exists
+    if (addToLibrary) {
+      const saved = JSON.parse(localStorage.getItem('rdr_library') || '[]');
+      if (!saved.includes(fname)) {
+        saved.push(fname);
+        localStorage.setItem('rdr_library', JSON.stringify(saved));
+      }
+    }
     const raw   = await resp.arrayBuffer();
     const bytes = new Uint8Array(raw);
 
@@ -344,7 +346,15 @@ async function openBook(fname) {
     else renderTxt(decrypted, fname, origName);
 
   } catch(e) {
-    document.getElementById('readerContent').innerHTML = `<p style="color:rgba(255,80,80,.8);padding:40px 0;">Error: ${e.message}</p>`;
+    goLibrary();
+    setTimeout(() => {
+      const list = document.getElementById('bookList');
+      const err = document.createElement('div');
+      err.style.cssText = 'font-size:13px;color:rgba(255,80,80,.8);padding:12px 16px;text-align:center;';
+      err.textContent = 'Could not open "' + fname + '" — check the filename';
+      list.prepend(err);
+      setTimeout(() => err.remove(), 3000);
+    }, 100);
   }
 }
 
